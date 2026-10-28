@@ -16,6 +16,7 @@ void workspace_begin(void **context) {
                 selector:@selector(appSwitched:)
                 name:NSWorkspaceDidActivateApplicationNotification
                 object:nil];
+        [self frontAppChanged:[[NSWorkspace sharedWorkspace] frontmostApplication]];
     }
 
     return self;
@@ -29,21 +30,17 @@ void workspace_begin(void **context) {
 }
 
 - (void)appSwitched:(NSNotification *)notification {
-    char* name = NULL;
-    char* bundle_id = NULL;
-    pid_t pid = 0;
-    if (notification && notification.userInfo) {
-      NSRunningApplication* app = [notification.userInfo objectForKey:NSWorkspaceApplicationKey];
-      if (app) {
-        name = (char*)[[app localizedName] UTF8String];
-        bundle_id = (char*)[[app bundleIdentifier] UTF8String];
-        pid = app.processIdentifier;
-      }
-    }
+    [self frontAppChanged:[notification.userInfo objectForKey:NSWorkspaceApplicationKey]];
+}
 
-    g_event_tap.front_app_ignored = event_tap_check_blacklist(&g_event_tap,
-                                                              name,
-                                                              bundle_id    );
+- (void)frontAppChanged:(NSRunningApplication *)app {
+    char* name = app ? (char*)[[app localizedName] UTF8String] : NULL;
+    char* bundle_id = app ? (char*)[[app bundleIdentifier] UTF8String] : NULL;
+    pid_t pid = app ? app.processIdentifier : 0;
+
+    g_event_tap.front_app_ignored = !event_tap_check_allowlist(&g_event_tap,
+                                                               name,
+                                                               bundle_id    );
     ax_front_app_changed(&g_ax, pid);
 }
 

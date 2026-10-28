@@ -10,8 +10,8 @@ extern char* string_copy(char* s);
 
 struct event_tap {
   bool front_app_ignored;
-  uint32_t blacklist_count;
-  char** blacklist;
+  uint32_t allowlist_count;
+  char** allowlist;
   CFMachPortRef handle;
   CFRunLoopSourceRef runloop_source;
   CGEventMask mask;
@@ -21,4 +21,4 @@ struct event_tap g_event_tap;
 bool event_tap_enabled(struct event_tap *event_tap);
 bool event_tap_begin(struct event_tap *event_tap);
 void event_tap_end(struct event_tap *event_tap);
-bool event_tap_check_blacklist(struct event_tap* event_tap, char* app, char* bundle_id);
+bool event_tap_check_allowlist(struct event_tap* event_tap, char* app, char* bundle_id);

@@ -10,10 +10,9 @@ You can use all modes (even commandline etc.) and all commands included in vim.
 It is also possible to load a custom `svimrc` file, which can contain
 custom vim configurations, e.g. remappings (see the examples folder).
 
-Additionally, you can edit the `blacklist` file in the `~/.config/svim/` folder
-to manually exclude applications from being handled by svim.
-You will likely want to blacklist your terminal emulator and gvim, such that there
-is no conflict.
+svim only handles applications listed in `~/.config/svim/allowlist`, one
+application name or bundle identifier per line (e.g. `com.apple.Stickies`).
+Without that file svim is inactive in every application.
 
 Every time the vim mode changes, or a commandline update is issued, the script
 `svim.sh` in the folder `~/.config/svim/` is executed where you can handle 
@@ -47,7 +46,7 @@ Known Issues:
 -------------
 * Multikey remappings are not recognized (e.g. jk for esc)
 * Some text fields break the accessibility api and this leads to bugs,
-  be sure to blacklist all apps that are affected by this.
+  leave every app that is affected by this out of the allowlist.
   Sometimes it helps to switch to a "raw" or "markdown" editing mode on websites,
   such that there is no interference.
   Generally, Safari seems to make most text fields available, while Firefox does not.

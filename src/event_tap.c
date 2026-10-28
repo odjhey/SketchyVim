@@ -1,11 +1,11 @@
 #include "event_tap.h"
 
-bool event_tap_check_blacklist(struct event_tap* event_tap,
+bool event_tap_check_allowlist(struct event_tap* event_tap,
                                char* app, char* bundle_id  ) {
-  if (!app || !bundle_id) return true;
-  for (int i = 0; i < event_tap->blacklist_count; i++)
-    if (strcmp(event_tap->blacklist[i], app) == 0 
-        || strcmp(event_tap->blacklist[i], bundle_id) == 0) {
+  if (!app || !bundle_id) return false;
+  for (int i = 0; i < event_tap->allowlist_count; i++)
+    if (strcmp(event_tap->allowlist[i], app) == 0
+        || strcmp(event_tap->allowlist[i], bundle_id) == 0) {
       return true;
     }
 
@@ -40,33 +40,37 @@ bool event_tap_enabled(struct event_tap* event_tap) {
   return result;
 }
 
-void event_tap_load_blacklist(struct event_tap* event_tap) {
-  event_tap->blacklist = NULL;
-  event_tap->blacklist_count = 0;
+void event_tap_load_allowlist(struct event_tap* event_tap) {
+  event_tap->allowlist = NULL;
+  event_tap->allowlist_count = 0;
   event_tap->front_app_ignored = true;
 
   char* home = getenv("HOME");
   char buf[512];
-  snprintf(buf, sizeof(buf), "%s/%s", home, ".config/svim/blacklist");
+  snprintf(buf, sizeof(buf), "%s/%s", home, ".config/svim/allowlist");
 
   FILE *file = fopen(buf, "r");
 
-  if (!file) return;
+  if (!file) {
+    printf("No %s: svim is inactive in every app.\n", buf);
+    return;
+  }
 
   char line[255];
   while (fgets(line, 255, file)) {
     uint32_t len = strlen(line);
-    if (line[len - 1] == '\n') line[len - 1] = '\0';
-    event_tap->blacklist = realloc(event_tap->blacklist,
-                                sizeof(char**) * ++event_tap->blacklist_count);
+    if (line[len - 1] == '\n') line[--len] = '\0';
+    if (len == 0) continue;
+    event_tap->allowlist = realloc(event_tap->allowlist,
+                                sizeof(char**) * ++event_tap->allowlist_count);
 
-    event_tap->blacklist[event_tap->blacklist_count - 1] = string_copy(line);
+    event_tap->allowlist[event_tap->allowlist_count - 1] = string_copy(line);
   }
   fclose(file);
 }
 
 bool event_tap_begin(struct event_tap* event_tap) {
-  event_tap_load_blacklist(event_tap);
+  event_tap_load_allowlist(event_tap);
 
   event_tap->mask = 1 << kCGEventKeyDown;
   event_tap->handle = CGEventTapCreate(kCGAnnotatedSessionEventTap,
@@ -101,9 +105,9 @@ void event_tap_end(struct event_tap* event_tap) {
     CFRelease(event_tap->handle);
     event_tap->handle = NULL;
 
-    for (int i = 0; i < event_tap->blacklist_count; i++)
-      if (event_tap->blacklist[i]) free(event_tap->blacklist[i]);
+    for (int i = 0; i < event_tap->allowlist_count; i++)
+      if (event_tap->allowlist[i]) free(event_tap->allowlist[i]);
 
-    if (event_tap->blacklist) free(event_tap->blacklist);
+    if (event_tap->allowlist) free(event_tap->allowlist);
   }
 }
